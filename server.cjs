@@ -1,3 +1,14 @@
+
+const fs = require('fs');
+const path = require('path');
+
+// 打印当前目录下有什么文件，方便我们看 dist 文件夹在不在
+console.log('--- 当前目录下的文件列表 ---');
+console.log(fs.readdirSync(__dirname)); 
+console.log('--------------------------');
+
+// 保持你原来的设置
+app.use(express.static(path.join(__dirname, 'dist')));
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
