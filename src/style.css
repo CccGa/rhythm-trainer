@@ -1,3 +1,16 @@
+/* 禁止网页内容超出屏幕宽度 */
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* 确保所有图片和容器最大宽度不超过屏幕 */
+img, video, canvas, div {
+  max-width: 100%;
+  box-sizing: border-box;
+}
 :root {
   --text: #6b6375;
   --text-h: #08060d;
