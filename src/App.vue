@@ -5,10 +5,6 @@
         <p class="eyebrow">Rhythm Trainer</p>
         <h1>节奏听辨生成器</h1>
       </div>
-      <div class="header-actions">
-        <button class="ghost-button" @click="exportScoreImage" :disabled="!hasQuestion">导出五线谱图片</button>
-        <button class="ghost-button" @click="exportAudioFile" :disabled="!hasQuestion">导出音频</button>
-      </div>
     </header>
 
     <section class="panel settings-panel">
@@ -96,9 +92,15 @@
     </section>
 
     <section class="panel score-panel">
-      <div class="section-title">
-        <h2>五线谱</h2>
-        <span v-if="!showScore">已隐藏</span>
+            <div class="section-title score-title">
+        <div class="score-title-left">
+          <h2>五线谱</h2>
+          <span v-if="!showScore">已隐藏</span>
+        </div>
+        <div class="score-actions">
+          <button class="ghost-button" @click="exportScoreImage" :disabled="!hasQuestion">导出五线谱图片</button>
+          <button class="ghost-button" @click="exportAudioFile" :disabled="!hasQuestion">导出音频</button>
+        </div>
       </div>
       <div class="score-paper">
         <div v-show="showScore" ref="scoreEl" class="score-host"></div>
@@ -111,10 +113,10 @@
 import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
 import { Beam, Dot, Formatter, Renderer, Stave, StaveNote, StaveTie, Tuplet, Voice } from 'vexflow'
 import * as Tone from 'tone'
-const noteHead = (x, y, filled = true) => `<ellipse cx="${x}" cy="${y}" rx="6" ry="4" transform="rotate(-18 ${x} ${y})" fill="${filled ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2"/>`
-const stem = (x1, y1, x2 = x1, y2 = 10) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>`
-const beam = (x1, y1, x2, y2 = y1, width = 5) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="currentColor" stroke-width="${width}" stroke-linecap="butt"/>`
-const flag = (x, y) => `<path d="M ${x} ${y} q 12 5 7 16" stroke="currentColor" stroke-width="2" fill="none"/>`
+const noteHead = (x, y, filled = true) => `<ellipse cx="${x + 1.5}" cy="${y}" rx="5" ry="3.5" transform="rotate(-18 ${x + 1.5} ${y})" fill="${filled ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="1.4"/>`
+const stem = (x1, y1, x2 = x1, y2 = 6) => `<line x1="${x1 + 1}" y1="${y1}" x2="${x2 + 1}" y2="${y2}" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>`
+const beam = (x1, y1, x2, y2 = y1, width = 3) => `<line x1="${x1 + 1}" y1="${y1 - 4}" x2="${x2 + 1}" y2="${y2 - 4}" stroke="currentColor" stroke-width="${width}" stroke-linecap="butt"/>`
+const flag = (x, y) => `<path d="M ${x + 1} ${y - 4} q 11 4 6 14" stroke="currentColor" stroke-width="1.4" fill="none"/>`
 const dot = (x, y) => `<circle cx="${x}" cy="${y}" r="2" fill="currentColor"/>`
 const svg = (body, viewBox = '0 0 92 44') => `<svg width="92" height="44" viewBox="${viewBox}" aria-hidden="true">${body}</svg>`
 
@@ -170,7 +172,7 @@ const rhythmPatterns = [
     id: 'triplet',
     label: '三连音',
     hint: '三连音',
-    svg: svg(`${noteHead(18, 31)}${stem(24, 31)}${noteHead(46, 31)}${stem(52, 31)}${noteHead(74, 31)}${stem(80, 31)}${beam(24, 10, 80)}<text x="45" y="12" fill="currentColor" font-size="12" font-weight="700">3</text>`),
+    svg: svg(`${noteHead(16, 31)}${stem(22, 31)}${noteHead(42, 31)}${stem(48, 31)}${noteHead(68, 31)}${stem(74, 31)}${beam(22, 10, 74)}<text x="40" y="7" fill="currentColor" font-size="11" font-weight="700">3</text>`, '0 0 86 44'),
   },
   {
     id: 'frontEightBackSixteen',
@@ -915,9 +917,8 @@ onMounted(async () => { initAudio(); await generateQuestion() })
   box-sizing: border-box;
 }
 
-.app-header,
+ .app-header,
 .section-title,
-.header-actions,
 .actions {
   display: flex;
   align-items: center;
@@ -1078,7 +1079,5 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 
 @media (max-width: 720px) {
   .app-header, .section-title, .status-bar { align-items: flex-start; flex-direction: column; }
-  .header-actions { width: 100%; flex-wrap: wrap; }
-  .header-actions button, .actions button { flex: 1 1 150px; }
 }
 </style>
