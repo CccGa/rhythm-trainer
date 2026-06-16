@@ -235,6 +235,18 @@ const scorePaperEl = ref(null)
 const scoreContentWidth = ref(760)
 const scoreContentHeight = ref(230)
 const scoreScale = ref(1)
+const scoreTranslateX = ref(0)
+const scoreTranslateY = ref(0)
+const scoreGesture = reactive({
+  active: false,
+  mode: 'none',
+  startDistance: 0,
+  startScale: 1,
+  startX: 0,
+  startY: 0,
+  startTranslateX: 0,
+  startTranslateY: 0,
+})
 const MIN_SCORE_SCALE = 0.75
 const MAX_SCORE_SCALE = 2.2
 const scorePinch = reactive({ active: false, startDistance: 0, startScale: 1 })
@@ -243,7 +255,9 @@ const scoreViewportStyle = computed(() => ({
   width: `${scoreContentWidth.value * scoreScale.value}px`,
   height: `${scoreContentHeight.value * scoreScale.value}px`,
 }))
-const scoreLayerStyle = computed(() => ({ transform: `scale(${scoreScale.value})` }))
+const scoreLayerStyle = computed(() => ({
+  transform: `translate3d(${scoreTranslateX.value}px, ${scoreTranslateY.value}px, 0) scale(${scoreScale.value})`,
+}))
 const enabledPatterns = reactive({
   quarterEighth: true,
   twoEight: true,
@@ -336,31 +350,48 @@ function clampScoreScale(value) {
 }
 
 function handleScoreTouchStart(event) {
-  if (event.touches.length !== 2) return
-  scorePinch.active = true
-  scorePinch.startDistance = getTouchDistance(event.touches[0], event.touches[1])
-  scorePinch.startScale = scoreScale.value
+  if (!event.touches.length) return
+  scoreGesture.active = true
+  if (event.touches.length === 2) {
+    scoreGesture.mode = 'pinch'
+    scoreGesture.startDistance = getTouchDistance(event.touches[0], event.touches[1])
+    scoreGesture.startScale = scoreScale.value
+    scoreGesture.startTranslateX = scoreTranslateX.value
+    scoreGesture.startTranslateY = scoreTranslateY.value
+    return
+  }
+  scoreGesture.mode = 'pan'
+  scoreGesture.startX = event.touches[0].clientX
+  scoreGesture.startY = event.touches[0].clientY
+  scoreGesture.startTranslateX = scoreTranslateX.value
+  scoreGesture.startTranslateY = scoreTranslateY.value
 }
 
 function handleScoreTouchMove(event) {
-  if (!scorePinch.active || event.touches.length !== 2 || !scorePinch.startDistance) return
-  const currentDistance = getTouchDistance(event.touches[0], event.touches[1])
-  scoreScale.value = clampScoreScale(scorePinch.startScale * (currentDistance / scorePinch.startDistance))
+  if (!scoreGesture.active) return
+  if (event.touches.length === 2 && scoreGesture.mode === 'pinch' && scoreGesture.startDistance) {
+    const currentDistance = getTouchDistance(event.touches[0], event.touches[1])
+    scoreScale.value = clampScoreScale(scoreGesture.startScale * (currentDistance / scoreGesture.startDistance))
+    return
+  }
+  if (event.touches.length === 1 && scoreGesture.mode === 'pan') {
+    const touch = event.touches[0]
+    scoreTranslateX.value = scoreGesture.startTranslateX + (touch.clientX - scoreGesture.startX)
+    scoreTranslateY.value = scoreGesture.startTranslateY + (touch.clientY - scoreGesture.startY)
+  }
 }
 
 function handleScoreTouchEnd(event) {
-  if (event.touches.length < 2) scorePinch.active = false
-}
-function makeNote(units, pitch, patternId, extra = {}) {
-  return {
-    units,
-    key: pitch.key,
-    tone: pitch.tone,
-    patternId,
-    isRest: false,
-    tiedToNext: false,
-    ...extra,
+  if (event.touches.length === 1) {
+    scoreGesture.mode = 'pan'
+    scoreGesture.startX = event.touches[0].clientX
+    scoreGesture.startY = event.touches[0].clientY
+    scoreGesture.startTranslateX = scoreTranslateX.value
+    scoreGesture.startTranslateY = scoreTranslateY.value
+    return
   }
+  scoreGesture.active = false
+  scoreGesture.mode = 'none'
 }
 
 function makeRest(units, patternId) {
@@ -1114,6 +1145,22 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 
 .score-viewport {
   display: inline-block;
+}
+
+@media (max-width: 720px) {
+  .app-shell { padding: 12px; }
+  .panel { padding: 16px; }
+  .app-header, .section-title, .status-bar { align-items: flex-start; flex-direction: column; }
+  .control-grid, .switch-grid { grid-template-columns: 1fr; }
+  .pattern-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .pattern-card { min-height: 112px; padding: 10px 8px; }
+  .pattern-svg { width: 72px; height: 34px; }
+  .pattern-card strong { font-size: 13px; }
+  .pattern-card small { font-size: 11px; }
+  .actions, .actions-right { gap: 10px; }
+  .actions-right { width: 100%; }
+  .actions-right button { flex: 1 1 0; }
+  .score-paper { padding: 12px; }
 }
 
 .score-scale-layer {
