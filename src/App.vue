@@ -102,9 +102,13 @@
           <button class="ghost-button" @click="exportAudioFile" :disabled="!hasQuestion">导出音频</button>
         </div>
       </div>
-      <div class="score-paper">
-        <div v-show="showScore" ref="scoreEl" class="score-host"></div>
-        <div v-if="!showScore" class="score-mask">五线谱已隐藏，可继续听辨或手动开启查看。</div>
+      <div class="score-paper" ref="scorePaperEl" @touchstart="handleScoreTouchStart" @touchmove.prevent="handleScoreTouchMove" @touchend="handleScoreTouchEnd" @touchcancel="handleScoreTouchEnd">
+        <div class="score-viewport" :style="scoreViewportStyle">
+          <div class="score-scale-layer" :style="scoreLayerStyle">
+            <div v-show="showScore" ref="scoreEl" class="score-host"></div>
+            <div v-if="!showScore" class="score-mask">五线谱已隐藏，可继续听辨或手动开启查看。</div>
+          </div>
+        </div>
       </div>
     </section>
   </main>
@@ -227,8 +231,20 @@ const pickupBar = ref(null)
 const selectedPitches = ref([])
 const statusMessage = ref('请先生成题目。')
 const scoreEl = ref(null)
+const scorePaperEl = ref(null)
+const scoreContentWidth = ref(760)
+const scoreContentHeight = ref(230)
+const scoreScale = ref(1)
+const MIN_SCORE_SCALE = 0.75
+const MAX_SCORE_SCALE = 2.2
+const scorePinch = reactive({ active: false, startDistance: 0, startScale: 1 })
+
+const scoreViewportStyle = computed(() => ({
+  width: `${scoreContentWidth.value * scoreScale.value}px`,
+  height: `${scoreContentHeight.value * scoreScale.value}px`,
+}))
+const scoreLayerStyle = computed(() => ({ transform: `scale(${scoreScale.value})` }))
 const enabledPatterns = reactive({
-  base: true,
   quarterEighth: true,
   twoEight: true,
   fourSixteen: true,
@@ -309,6 +325,32 @@ function togglePattern(pattern) {
   generateQuestion()
 }
 
+function getTouchDistance(t1, t2) {
+  const dx = t2.clientX - t1.clientX
+  const dy = t2.clientY - t1.clientY
+  return Math.hypot(dx, dy)
+}
+
+function clampScoreScale(value) {
+  return Math.min(MAX_SCORE_SCALE, Math.max(MIN_SCORE_SCALE, value))
+}
+
+function handleScoreTouchStart(event) {
+  if (event.touches.length !== 2) return
+  scorePinch.active = true
+  scorePinch.startDistance = getTouchDistance(event.touches[0], event.touches[1])
+  scorePinch.startScale = scoreScale.value
+}
+
+function handleScoreTouchMove(event) {
+  if (!scorePinch.active || event.touches.length !== 2 || !scorePinch.startDistance) return
+  const currentDistance = getTouchDistance(event.touches[0], event.touches[1])
+  scoreScale.value = clampScoreScale(scorePinch.startScale * (currentDistance / scorePinch.startDistance))
+}
+
+function handleScoreTouchEnd(event) {
+  if (event.touches.length < 2) scorePinch.active = false
+}
 function makeNote(units, pitch, patternId, extra = {}) {
   return {
     units,
@@ -609,6 +651,8 @@ function renderStaff() {
   const rows = Math.ceil(measures.length / measuresPerRow)
   const width = measuresPerRow * measureWidth + 55
   const height = Math.max(210, rows * rowHeight + 45)
+  scoreContentWidth.value = width
+  scoreContentHeight.value = height
   const renderer = new Renderer(scoreEl.value, Renderer.Backends.SVG)
   renderer.resize(width, height)
   const context = renderer.getContext()
@@ -875,7 +919,7 @@ async function exportAudioFile() {
   }, seconds)
 
   downloadBlob(writeWav(rendered), 'rhythm-audio.wav')
-  statusMessage.value = '音频已导出为 WAV；当前项目未安装 MP3 编码器。'
+  statusMessage.value = '音频已导出为 WAV'
 }
 
 function downloadBlob(blob, filename) {
@@ -1059,12 +1103,24 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   min-height: 230px;
   margin-top: 16px;
   padding: 18px;
-  overflow-x: auto;
+  overflow: auto;
+  touch-action: none;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
   background: #ffffff;
   border-radius: 8px;
   box-sizing: border-box;
 }
 
+.score-viewport {
+  display: inline-block;
+}
+
+.score-scale-layer {
+  width: fit-content;
+  height: fit-content;
+  transform-origin: top left;
+}
 .score-host { min-width: 760px; }
 .score-host :deep(svg) { display: block; max-width: 100%; height: auto; }
 
