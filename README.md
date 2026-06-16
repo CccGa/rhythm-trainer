@@ -1,4 +1,4 @@
-已托管至onremder       https://rhythm-trainer.onrender.com/
+https://rhythm-trainer.onrender.com/
 
 导出音频音色暂未匹配
 
