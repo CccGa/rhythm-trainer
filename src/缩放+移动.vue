@@ -1159,9 +1159,7 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   display: inline-block;
 }
 
-@media (max-width: 1200px) {
-  html { zoom: 0.7; }
-
+@media (max-width: 720px) {
   .app-shell { padding: 12px; }
   .panel { padding: 16px; }
   .app-header, .section-title, .status-bar { align-items: flex-start; flex-direction: column; }
