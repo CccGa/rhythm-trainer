@@ -64,12 +64,14 @@
             <span class="pattern-svg" v-html="patternSvg(pattern)"></span>
             <strong>{{ patternTitle(pattern) }}</strong>
           </button>
+            <div class="toggle-group">
+              <button class="toggle-sub" :class="{ active: useAnacrusis }" @click="useAnacrusis = !useAnacrusis">加入弱起小节</button>
+              <button class="toggle-sub" :class="{ active: allowRests }" @click="allowRests = !allowRests">加入休止符</button>
+            </div>
         </div>
       </div>
 
       <div class="switch-grid">
-        <label><input v-model="useAnacrusis" type="checkbox" /> 加入弱起小节</label>
-        <label><input v-model="allowRests" type="checkbox" /> 加入休止符</label>
         <label><input v-model="useMetronome" type="checkbox" /> 节拍器</label>
         <label><input v-model="showPitchPreview" type="checkbox" /> 音高预览</label>
       </div>
@@ -111,7 +113,7 @@
           <button class="ghost-button" @click="exportAudioFile" style="margin-left:10px" :disabled="!hasQuestion">导出音频</button>
         </div>
       </div>
-      <div class="score-paper" ref="scorePaperEl" @touchstart="handleScoreTouchStart" @touchmove.prevent="handleScoreTouchMove" @touchend="handleScoreTouchEnd" @touchcancel="handleScoreTouchEnd">
+      <div class="score-paper" ref="scorePaperEl" @touchstart="handleScoreTouchStart" @touchmove.prevent="handleScoreTouchMove" @touchend="handleScoreTouchEnd" @touchcancel="handleScoreTouchEnd" @mousedown="handleScoreMouseDown" @mousemove="handleScoreMouseMove" @mouseup="handleScoreMouseUp" @mouseleave="handleScoreMouseUp" @wheel.prevent="handleScoreWheel">
         <div class="score-viewport" :style="scoreViewportStyle">
           <div class="score-scale-layer" :style="scoreLayerStyle">
             <div v-show="showScore" ref="scoreEl" class="score-host"></div>
@@ -234,6 +236,7 @@ const allowRests = ref(false)
 const useMetronome = ref(true)
 const showPitchPreview = ref(false)
 const showScore = ref(true)
+const scoreAutoCentered = ref(false)
 const isPlaying = ref(false)
 const questionBars = ref([])
 const pickupBar = ref(null)
@@ -290,7 +293,10 @@ let stopTimers = []
 
 const hasQuestion = computed(() => questionBars.value.length > 0)
 const isEighthMeter = computed(() => timeSignature.value.endsWith('/8'))
-const flatNotes = computed(() => questionBars.value.flat())
+const flatNotes = computed(() => {
+  const bars = pickupBar.value ? [pickupBar.value, ...questionBars.value] : questionBars.value
+  return bars.flat()
+})
 const sortedPitches = computed(() => [...selectedPitches.value].sort((a, b) => pitchToMidi(a.tone) - pitchToMidi(b.tone)))
 const pitchPreviewText = computed(() => `题目音高：${sortedPitches.value.map((p) => p.tone).join('、')}`)
 
@@ -364,6 +370,7 @@ function clampScoreScale(value) {
 }
 
 function handleScoreTouchStart(event) {
+  scoreAutoCentered.value = true
   if (!event.touches.length) return
   scoreGesture.active = true
   if (event.touches.length === 2) {
@@ -428,6 +435,55 @@ function handleScoreTouchEnd(event) {
   }
   scoreGesture.active = false
   scoreGesture.mode = 'none'
+}
+function handleScoreWheel(e) {
+  scoreAutoCentered.value = true
+  const paper = scorePaperEl.value
+  if (!paper) return
+  const rect = paper.getBoundingClientRect()
+  const px = e.clientX - rect.left
+  const py = e.clientY - rect.top
+  const delta = e.deltaY > 0 ? 0.9 : 1.1
+  const newScale = clampScoreScale(scoreScale.value * delta)
+  const ratio = newScale / scoreScale.value
+  scoreTranslateX.value = px - ratio * (px - scoreTranslateX.value)
+  scoreTranslateY.value = py - ratio * (py - scoreTranslateY.value)
+  scoreScale.value = newScale
+}
+let scoreMouseDown = false
+let scoreMouseStartX = 0
+let scoreMouseStartY = 0
+let scoreMouseStartTX = 0
+let scoreMouseStartTY = 0
+
+function handleScoreMouseDown(e) {
+  scoreAutoCentered.value = true
+  scoreMouseDown = true
+  scoreMouseStartX = e.clientX
+  scoreMouseStartY = e.clientY
+  scoreMouseStartTX = scoreTranslateX.value
+  scoreMouseStartTY = scoreTranslateY.value
+}
+
+function handleScoreMouseMove(e) {
+  if (!scoreMouseDown) return
+  const paper = scorePaperEl.value
+  if (!paper) return
+  const margin = 150
+  const totalW = scoreContentWidth.value * scoreScale.value
+  const totalH = scoreContentHeight.value * scoreScale.value
+  const gapW = Math.max(margin, (paper.clientWidth - totalW) / 2)
+  const gapH = Math.max(margin, (paper.clientHeight - totalH) / 2)
+  const minX = -(totalW + gapW - paper.clientWidth)
+  const maxX = gapW
+  const minY = -(totalH + gapH - paper.clientHeight)
+  const maxY = gapH
+  scoreTranslateX.value = Math.max(minX, Math.min(maxX, scoreMouseStartTX + (e.clientX - scoreMouseStartX)))
+  scoreTranslateY.value = Math.max(minY, Math.min(maxY, scoreMouseStartTY + (e.clientY - scoreMouseStartY)))
+}
+
+function handleScoreMouseUp() {
+  scoreMouseDown = false
 }
 
 function makeNote(units, pitch, patternId, extra = {}) {
@@ -724,13 +780,13 @@ function renderStaff() {
 
   scoreEl.value.innerHTML = ''
   const measures = pickupBar.value ? [pickupBar.value, ...questionBars.value] : questionBars.value
-  const measuresPerRow = 2
-  const measureWidth = 430
+  const measuresPerRow = pickupBar.value ? 3 : 2
   const rowHeight = 155
+
+  const frameWidth = pickupBar.value ? 1065 : 915
+  const width = frameWidth
   const rows = Math.ceil(measures.length / measuresPerRow)
-  const width = measuresPerRow * measureWidth + 55
   const height = Math.max(210, rows * rowHeight + 45)
-  scoreContentWidth.value = width
   scoreContentHeight.value = height
   const renderer = new Renderer(scoreEl.value, Renderer.Backends.SVG)
   renderer.resize(width, height)
@@ -741,18 +797,32 @@ function renderStaff() {
   const globalVex = []
   const globalNotes = []
   let globalCursor = 0
-
   measures.forEach((bar, index) => {
     const row = Math.floor(index / measuresPerRow)
     const col = index % measuresPerRow
-    const x = 12 + col * measureWidth
+    const rawW = Math.max(80, Math.min(400, 80 + bar.length * 22))
+    const rowRawTotal = measures.slice(row * measuresPerRow, (row + 1) * measuresPerRow).reduce((s, b) => s + Math.max(80, Math.min(400, 80 + b.length * 22)), 0)
+    const usableW = frameWidth - 55
+    const mw = Math.round(rawW / rowRawTotal * usableW)
+    const prevW = col === 0 ? 0 : measures.slice(row * measuresPerRow, row * measuresPerRow + col).reduce((s, b, ci) => s + Math.round(Math.max(80, Math.min(400, 80 + b.length * 22)) / rowRawTotal * usableW), 0)
+    const x = 12 + prevW
     const y = 36 + row * rowHeight
-    const stave = new Stave(x, y, measureWidth)
+    const stave = new Stave(x, y, mw)
     if (col === 0) stave.addClef('treble')
     if (index === 0) {
       stave.addTimeSignature(timeSignature.value)
       stave.setTempo({ ...tempoDurationForScore(), bpm: bpm.value }, -12)
+    
+
+  // auto-center on first render
+  if (!scoreAutoCentered.value) {
+    const paper = scorePaperEl.value
+    if (paper) {
+      scoreTranslateX.value = Math.max(0, (paper.clientWidth - scoreContentWidth.value) / 2)
+      scoreTranslateY.value = Math.max(0, (paper.clientHeight - scoreContentHeight.value) / 2)
     }
+    scoreAutoCentered.value = false
+  }}
     stave.setContext(context).draw()
 
     const vexNotes = bar.map(buildVexNote)
@@ -761,7 +831,7 @@ function renderStaff() {
     const voice = new Voice({ num_beats: expectedUnits, beat_value: 16 })
     voice.setStrict(false)
     voice.addTickables(vexNotes)
-    new Formatter().joinVoices([voice]).format([voice], measureWidth - (col === 0 ? 88 : 36))
+    new Formatter().joinVoices([voice]).format([voice], mw - (col === 0 ? 88 : 36))
     voice.draw(context, stave)
     beams.forEach((beamItem) => beamItem.setContext(context).draw())
 
@@ -920,22 +990,18 @@ function exportScoreImage() {
   const clone = svgNode.cloneNode(true)
   clone.setAttribute('width', String(w))
   clone.setAttribute('height', String(h))
-  clone.removeAttribute('style')
-  let svg = new XMLSerializer().serializeToString(clone)
-  svg = svg.replace(/currentColor/gi, '#000')
-  const svgTag = '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h + '"><rect width="100%" height="100%" fill="#fff"/>'
-  const endSvg = '</svg>'
-  svg = svgTag + svg.replace(/^<svg[^>]*>/, '').replace(endSvg, '') + endSvg
-  const canvas = document.createElement('canvas')
+  var svgStr = new XMLSerializer().serializeToString(clone)
+  svgStr = svgStr.replace(/currentColor/gi, '#000')
+  var canvas = document.createElement('canvas')
   canvas.width = w * 2
   canvas.height = h * 2
-  const ctx = canvas.getContext('2d')
+  var ctx = canvas.getContext('2d')
   ctx.scale(2, 2)
   ctx.fillStyle = '#fff'
   ctx.fillRect(0, 0, w, h)
-  const img = new Image()
-  const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }))
-  img.onload = () => {
+  var img = new Image()
+  var url = URL.createObjectURL(new Blob([svgStr], { type: 'image/svg+xml' }))
+  img.onload = function() {
     ctx.drawImage(img, 0, 0, w, h)
     URL.revokeObjectURL(url)
     canvas.toBlob(function(b) { if (b) downloadBlob(b, 'rhythm-score.png') }, 'image/png')
@@ -1142,6 +1208,44 @@ input[type="range"] { padding: 0; }
 .pattern-svg :deep(svg) { width: 100%; height: 100%; display: block; }
 
 .pattern-card small { color: #aeb6c6; font-size: 12px; text-align: center; }
+.toggle-group {
+  min-height: 90px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  justify-content: center;
+}
+
+.toggle-sub {
+  flex: 1;
+  min-height: 0;
+  height: 41px;
+  padding: 2px 8px;
+  color: #d8deea;
+  background: #2a2e38;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.toggle-sub.active {
+  border-color: #63a4ff;
+  background: #29384e;
+}
+
+@media (max-width: 720px) {
+  .toggle-group { min-height: 76px; padding: 3px; }
+  .toggle-sub { font-size: 10px; }
+}
 
 .switch-grid {
   display: grid;
@@ -1153,7 +1257,7 @@ input[type="range"] { padding: 0; }
 .switch-grid label { min-height: 40px; display: flex; align-items: center; gap: 9px; }
 .switch-grid input { width: 18px; min-height: 18px; }
 
-.actions { justify-content: space-between; align-items: center; margin-top: 20px; flex-wrap: wrap; }
+.actions { justify-content: space-between; align-items: center; margin-top: 20px; flex-wrap: nowrap; white-space: nowrap; }
 .actions-right { display: flex; gap: 14px; }
 button {
   min-height: 42px;
@@ -1188,6 +1292,7 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .status-bar strong { color: #ffffff; font-size: 14px; }
 
 .score-paper {
+  height: 500px;
   min-height: 230px;
   margin-top: 16px;
   padding: 18px;
@@ -1199,6 +1304,13 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   background: #ffffff;
   border-radius: 8px;
   box-sizing: border-box;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+}
+
+.score-paper:active {
+  cursor: grabbing;
 }
 
 .score-viewport {
@@ -1219,7 +1331,7 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   .actions, .actions-right { gap: 8px; }
   .actions-right { width: 100%; }
   .actions-right button { flex: 1 1 0; }
-  .score-paper { padding: 8px; }
+  .score-paper { height: 500px; padding: 8px; }
 }
 
 .score-scale-layer {

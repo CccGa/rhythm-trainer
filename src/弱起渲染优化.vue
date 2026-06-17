@@ -113,7 +113,7 @@
           <button class="ghost-button" @click="exportAudioFile" style="margin-left:10px" :disabled="!hasQuestion">导出音频</button>
         </div>
       </div>
-      <div class="score-paper" ref="scorePaperEl" @touchstart="handleScoreTouchStart" @touchmove.prevent="handleScoreTouchMove" @touchend="handleScoreTouchEnd" @touchcancel="handleScoreTouchEnd" @mousedown="handleScoreMouseDown" @mousemove="handleScoreMouseMove" @mouseup="handleScoreMouseUp" @mouseleave="handleScoreMouseUp" @wheel.prevent="handleScoreWheel">
+      <div class="score-paper" ref="scorePaperEl" @touchstart="handleScoreTouchStart" @touchmove.prevent="handleScoreTouchMove" @touchend="handleScoreTouchEnd" @touchcancel="handleScoreTouchEnd">
         <div class="score-viewport" :style="scoreViewportStyle">
           <div class="score-scale-layer" :style="scoreLayerStyle">
             <div v-show="showScore" ref="scoreEl" class="score-host"></div>
@@ -236,7 +236,6 @@ const allowRests = ref(false)
 const useMetronome = ref(true)
 const showPitchPreview = ref(false)
 const showScore = ref(true)
-const scoreAutoCentered = ref(false)
 const isPlaying = ref(false)
 const questionBars = ref([])
 const pickupBar = ref(null)
@@ -370,7 +369,6 @@ function clampScoreScale(value) {
 }
 
 function handleScoreTouchStart(event) {
-  scoreAutoCentered.value = true
   if (!event.touches.length) return
   scoreGesture.active = true
   if (event.touches.length === 2) {
@@ -435,55 +433,6 @@ function handleScoreTouchEnd(event) {
   }
   scoreGesture.active = false
   scoreGesture.mode = 'none'
-}
-function handleScoreWheel(e) {
-  scoreAutoCentered.value = true
-  const paper = scorePaperEl.value
-  if (!paper) return
-  const rect = paper.getBoundingClientRect()
-  const px = e.clientX - rect.left
-  const py = e.clientY - rect.top
-  const delta = e.deltaY > 0 ? 0.9 : 1.1
-  const newScale = clampScoreScale(scoreScale.value * delta)
-  const ratio = newScale / scoreScale.value
-  scoreTranslateX.value = px - ratio * (px - scoreTranslateX.value)
-  scoreTranslateY.value = py - ratio * (py - scoreTranslateY.value)
-  scoreScale.value = newScale
-}
-let scoreMouseDown = false
-let scoreMouseStartX = 0
-let scoreMouseStartY = 0
-let scoreMouseStartTX = 0
-let scoreMouseStartTY = 0
-
-function handleScoreMouseDown(e) {
-  scoreAutoCentered.value = true
-  scoreMouseDown = true
-  scoreMouseStartX = e.clientX
-  scoreMouseStartY = e.clientY
-  scoreMouseStartTX = scoreTranslateX.value
-  scoreMouseStartTY = scoreTranslateY.value
-}
-
-function handleScoreMouseMove(e) {
-  if (!scoreMouseDown) return
-  const paper = scorePaperEl.value
-  if (!paper) return
-  const margin = 150
-  const totalW = scoreContentWidth.value * scoreScale.value
-  const totalH = scoreContentHeight.value * scoreScale.value
-  const gapW = Math.max(margin, (paper.clientWidth - totalW) / 2)
-  const gapH = Math.max(margin, (paper.clientHeight - totalH) / 2)
-  const minX = -(totalW + gapW - paper.clientWidth)
-  const maxX = gapW
-  const minY = -(totalH + gapH - paper.clientHeight)
-  const maxY = gapH
-  scoreTranslateX.value = Math.max(minX, Math.min(maxX, scoreMouseStartTX + (e.clientX - scoreMouseStartX)))
-  scoreTranslateY.value = Math.max(minY, Math.min(maxY, scoreMouseStartTY + (e.clientY - scoreMouseStartY)))
-}
-
-function handleScoreMouseUp() {
-  scoreMouseDown = false
 }
 
 function makeNote(units, pitch, patternId, extra = {}) {
@@ -812,17 +761,7 @@ function renderStaff() {
     if (index === 0) {
       stave.addTimeSignature(timeSignature.value)
       stave.setTempo({ ...tempoDurationForScore(), bpm: bpm.value }, -12)
-    
-
-  // auto-center on first render
-  if (!scoreAutoCentered.value) {
-    const paper = scorePaperEl.value
-    if (paper) {
-      scoreTranslateX.value = Math.max(0, (paper.clientWidth - scoreContentWidth.value) / 2)
-      scoreTranslateY.value = Math.max(0, (paper.clientHeight - scoreContentHeight.value) / 2)
     }
-    scoreAutoCentered.value = false
-  }}
     stave.setContext(context).draw()
 
     const vexNotes = bar.map(buildVexNote)
@@ -1292,7 +1231,6 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .status-bar strong { color: #ffffff; font-size: 14px; }
 
 .score-paper {
-  height: 500px;
   min-height: 230px;
   margin-top: 16px;
   padding: 18px;
@@ -1304,13 +1242,6 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   background: #ffffff;
   border-radius: 8px;
   box-sizing: border-box;
-  user-select: none;
-  -webkit-user-select: none;
-  cursor: grab;
-}
-
-.score-paper:active {
-  cursor: grabbing;
 }
 
 .score-viewport {
@@ -1331,7 +1262,7 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   .actions, .actions-right { gap: 8px; }
   .actions-right { width: 100%; }
   .actions-right button { flex: 1 1 0; }
-  .score-paper { height: 500px; padding: 8px; }
+  .score-paper { padding: 8px; }
 }
 
 .score-scale-layer {
