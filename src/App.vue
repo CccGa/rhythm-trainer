@@ -1053,7 +1053,8 @@ onMounted(async () => { initAudio(); await new Promise(r => setTimeout(r, 500));
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
+  gap: 10px;
+  flex-wrap: nowrap;
 }
 
 .app-header { max-width: 1180px; margin: 0 auto 18px; }
@@ -1094,7 +1095,8 @@ h2 { font-size: 20px; font-weight: 650; }
 
 input, select {
   min-height: 42px;
-  padding: 8px 10px;
+  height: 42px;
+  padding: 6px 10px;
   color: #f8fafc;
   background: #171a20;
   border: 1px solid #3a4050;
@@ -1199,6 +1201,8 @@ button {
   color: #fff;
   font-weight: 700;
   cursor: pointer;
+  height: 42px;
+  white-space: nowrap;
 }
 
 button:disabled { cursor: not-allowed; opacity: 0.55; }
