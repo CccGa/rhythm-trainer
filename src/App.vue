@@ -905,26 +905,22 @@ function stopPlayback() {
 function exportScoreImage() {
   const svgNode = scoreEl.value?.querySelector('svg')
   if (!svgNode) return
-  const source = new XMLSerializer().serializeToString(svgNode.cloneNode(true))
-    .replace(/currentColor/gi, '#000000')
-  const image = new Image()
-  const blob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  image.onload = () => {
-    const canvas = document.createElement('canvas')
-    canvas.width = image.width || 1040
-    canvas.height = image.height || 400
-    const ctx = canvas.getContext('2d')
-    ctx.fillStyle = '#ffffff'
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
-    ctx.drawImage(image, 0, 0)
-    URL.revokeObjectURL(url)
-    canvas.toBlob((png) => downloadBlob(png, 'rhythm-score.png'), 'image/png')
+  const clone = svgNode.cloneNode(true)
+  clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
+  let source = new XMLSerializer().serializeToString(clone)
+  source = source.replace(/currentColor/gi, '#000000')
+  source = source.replace(/fill="#([^"]*)"/gi, (m) => m.includes('none') ? m : 'fill="#000000"')
+  source = source.replace(/stroke="#([^"]*)"/gi, (m) => m.includes('none') ? m : 'stroke="#000000"')
+  source = source.replace(/color="#([^"]*)"/gi, 'color="#000000"')
+  downloadBlob(new Blob([source], { type: 'image/svg+xml;charset=utf-8' }), 'rhythm-score.svg')
+  const w = window.open()
+  if (w) {
+    w.document.write('<!DOCTYPE html><html><body style="margin:0;text-align:center;background:#fff">')
+    w.document.write(source)
+    w.document.write('</body></html>')
+    w.document.title = 'rhythm-score'
   }
-  image.src = url
-}
-
-function writeWav(audioBuffer) {
+}function writeWav(audioBuffer) {
   const data = audioBuffer.getChannelData(0)
   const buffer = new ArrayBuffer(44 + data.length * 2)
   const view = new DataView(buffer)
