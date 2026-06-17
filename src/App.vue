@@ -900,7 +900,14 @@ function stopPlayback() {
 function exportScoreImage() {
   const svgNode = scoreEl.value?.querySelector('svg')
   if (!svgNode) return
-  const source = new XMLSerializer().serializeToString(svgNode.cloneNode(true))
+  const clone = svgNode.cloneNode(true)
+  clone.querySelectorAll('*').forEach(el => {
+    if (el.getAttribute('fill') === 'currentColor') el.setAttribute('fill', '#000000')
+    if (el.getAttribute('stroke') === 'currentColor') el.setAttribute('stroke', '#000000')
+    if (el.style && el.style.color) el.style.color = '#000000'
+    if (el.getAttribute('color') === 'currentColor') el.setAttribute('color', '#000000')
+  })
+  const source = new XMLSerializer().serializeToString(clone)
   const image = new Image()
   const blob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' })
   const url = URL.createObjectURL(blob)
