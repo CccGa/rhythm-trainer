@@ -371,7 +371,15 @@ function handleScoreTouchMove(event) {
   if (!scoreGesture.active) return
   if (event.touches.length === 2 && scoreGesture.mode === 'pinch' && scoreGesture.startDistance) {
     const currentDistance = getTouchDistance(event.touches[0], event.touches[1])
-    scoreScale.value = clampScoreScale(scoreGesture.startScale * (currentDistance / scoreGesture.startDistance))
+    const newScale = clampScoreScale(scoreGesture.startScale * (currentDistance / scoreGesture.startDistance))
+    const fp = getTouchMidpoint(event.touches[0], event.touches[1])
+    const rect = paper.getBoundingClientRect()
+    const px = fp.x - rect.left
+    const py = fp.y - rect.top
+    const ratio = newScale / scoreScale.value
+    scoreTranslateX.value = px - ratio * (px - scoreTranslateX.value)
+    scoreTranslateY.value = py - ratio * (py - scoreTranslateY.value)
+    scoreScale.value = newScale
     return
   }
   if (event.touches.length === 1 && scoreGesture.mode === 'pan') {
