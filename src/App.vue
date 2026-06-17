@@ -1161,6 +1161,7 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 
 @media (max-width: 720px) {
   html { zoom: 0.7; }
+  body { width: 1400px; overflow-x: hidden; }
 
   .app-shell { padding: 10px; }
   .panel { padding: 12px; }
