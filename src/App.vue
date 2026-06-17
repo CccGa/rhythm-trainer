@@ -1160,6 +1160,8 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 }
 
 @media (max-width: 720px) {
+  html { zoom: 0.7; }
+
   .app-shell { padding: 12px; }
   .panel { padding: 16px; }
   .app-header, .section-title, .status-bar { align-items: flex-start; flex-direction: column; }
