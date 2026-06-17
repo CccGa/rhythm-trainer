@@ -1292,7 +1292,7 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .status-bar strong { color: #ffffff; font-size: 14px; }
 
 .score-paper {
-  height: 500px;
+  height: 400px;
   min-height: 230px;
   margin-top: 16px;
   padding: 18px;
@@ -1331,7 +1331,7 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   .actions, .actions-right { gap: 8px; }
   .actions-right { width: 100%; }
   .actions-right button { flex: 1 1 0; }
-  .score-paper { height: 500px; padding: 8px; }
+  .score-paper { height: 400px; padding: 8px; }
 }
 
 .score-scale-layer {
