@@ -1162,18 +1162,17 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 @media (max-width: 720px) {
   html { zoom: 0.7; }
 
-  .app-shell { padding: 12px; }
-  .panel { padding: 16px; }
-  .section-title { flex-direction: column; align-items: flex-start; }
-  .pattern-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-  .pattern-card { min-height: 100px; padding: 10px 8px; }
-  .pattern-svg { width: 72px; height: 34px; }
-  .pattern-card strong { font-size: 13px; }
-  .pattern-card small { font-size: 11px; }
-  .actions, .actions-right { gap: 10px; }
+  .app-shell { padding: 10px; }
+  .panel { padding: 12px; }
+  .pattern-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .pattern-card { min-height: 90px; padding: 8px 6px; }
+  .pattern-svg { width: 68px; height: 30px; }
+  .pattern-card strong { font-size: 12px; }
+  .pattern-card small { font-size: 10px; }
+  .actions, .actions-right { gap: 8px; }
   .actions-right { width: 100%; }
   .actions-right button { flex: 1 1 0; }
-  .score-paper { padding: 12px; }
+  .score-paper { padding: 8px; }
 }
 
 .score-scale-layer {
