@@ -1159,15 +1159,14 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   display: inline-block;
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 720px) {
   html { zoom: 0.7; }
 
   .app-shell { padding: 12px; }
   .panel { padding: 16px; }
-  .app-header, .section-title, .status-bar { align-items: flex-start; flex-direction: column; }
-  .control-grid, .switch-grid { grid-template-columns: 1fr; }
+  .section-title { flex-direction: column; align-items: flex-start; }
   .pattern-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-  .pattern-card { min-height: 112px; padding: 10px 8px; }
+  .pattern-card { min-height: 100px; padding: 10px 8px; }
   .pattern-svg { width: 72px; height: 34px; }
   .pattern-card strong { font-size: 13px; }
   .pattern-card small { font-size: 11px; }
