@@ -64,12 +64,14 @@
             <span class="pattern-svg" v-html="patternSvg(pattern)"></span>
             <strong>{{ patternTitle(pattern) }}</strong>
           </button>
+            <div class="toggle-group">
+              <button class="toggle-sub" :class="{ active: useAnacrusis }" @click="useAnacrusis = !useAnacrusis">加入弱起小节</button>
+              <button class="toggle-sub" :class="{ active: allowRests }" @click="allowRests = !allowRests">加入休止符</button>
+            </div>
         </div>
       </div>
 
       <div class="switch-grid">
-        <label><input v-model="useAnacrusis" type="checkbox" /> 加入弱起小节</label>
-        <label><input v-model="allowRests" type="checkbox" /> 加入休止符</label>
         <label><input v-model="useMetronome" type="checkbox" /> 节拍器</label>
         <label><input v-model="showPitchPreview" type="checkbox" /> 音高预览</label>
       </div>
@@ -920,22 +922,18 @@ function exportScoreImage() {
   const clone = svgNode.cloneNode(true)
   clone.setAttribute('width', String(w))
   clone.setAttribute('height', String(h))
-  clone.removeAttribute('style')
-  let svg = new XMLSerializer().serializeToString(clone)
-  svg = svg.replace(/currentColor/gi, '#000')
-  const svgTag = '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h + '"><rect width="100%" height="100%" fill="#fff"/>'
-  const endSvg = '</svg>'
-  svg = svgTag + svg.replace(/^<svg[^>]*>/, '').replace(endSvg, '') + endSvg
-  const canvas = document.createElement('canvas')
+  var svgStr = new XMLSerializer().serializeToString(clone)
+  svgStr = svgStr.replace(/currentColor/gi, '#000')
+  var canvas = document.createElement('canvas')
   canvas.width = w * 2
   canvas.height = h * 2
-  const ctx = canvas.getContext('2d')
+  var ctx = canvas.getContext('2d')
   ctx.scale(2, 2)
   ctx.fillStyle = '#fff'
   ctx.fillRect(0, 0, w, h)
-  const img = new Image()
-  const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }))
-  img.onload = () => {
+  var img = new Image()
+  var url = URL.createObjectURL(new Blob([svgStr], { type: 'image/svg+xml' }))
+  img.onload = function() {
     ctx.drawImage(img, 0, 0, w, h)
     URL.revokeObjectURL(url)
     canvas.toBlob(function(b) { if (b) downloadBlob(b, 'rhythm-score.png') }, 'image/png')
@@ -1142,6 +1140,38 @@ input[type="range"] { padding: 0; }
 .pattern-svg :deep(svg) { width: 100%; height: 100%; display: block; }
 
 .pattern-card small { color: #aeb6c6; font-size: 12px; text-align: center; }
+.toggle-group {
+  min-height: 90px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.toggle-sub {
+  flex: 1;
+  min-height: 0;
+  padding: 4px 6px;
+  color: #d8deea;
+  background: #2a2e38;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.toggle-sub.active {
+  border-color: #63a4ff;
+  background: #29384e;
+}
+
+@media (max-width: 720px) {
+  .toggle-group { min-height: 76px; padding: 3px; }
+  .toggle-sub { font-size: 10px; }
+}
 
 .switch-grid {
   display: grid;
