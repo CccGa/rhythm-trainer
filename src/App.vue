@@ -283,6 +283,13 @@ const enabledPatterns = reactive({
   tie: true,
 })
 
+
+const gridColumns = computed(() => {
+  const total = rhythmPatterns.length + 1
+  if (total <= 8) return 'repeat(3, 1fr)'
+  if (total <= 12) return 'repeat(4, 1fr)'
+  return 'repeat(6, 1fr)'
+})
 let sampler = null
 let fallbackSynth = null
 let clickSynth = null
@@ -1179,7 +1186,10 @@ input[type="range"] { padding: 0; }
 @media (max-width: 720px) {
   .toggle-group { min-height: 76px; padding: 3px; }
   .toggle-sub { font-size: 10px; }
-}
+
+  
+  .toggle-group { align-self: center; justify-content: center; }
+  .toggle-sub { display: flex; align-items: center; justify-content: center; }}
 
 .switch-grid {
   display: grid;
@@ -1191,7 +1201,7 @@ input[type="range"] { padding: 0; }
 .switch-grid label { min-height: 40px; display: flex; align-items: center; gap: 9px; }
 .switch-grid input { width: 18px; min-height: 18px; }
 
-.actions { justify-content: space-between; align-items: center; margin-top: 20px; flex-wrap: wrap; }
+.actions { justify-content: space-between; align-items: center; margin-top: 20px; flex-wrap: nowrap; }
 .actions-right { display: flex; gap: 14px; }
 button {
   min-height: 42px;
@@ -1261,6 +1271,8 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   .actions-right button { flex: 1 1 0; }
   .score-paper { padding: 8px; }
 }
+
+
 
 .score-scale-layer {
   width: fit-content;
