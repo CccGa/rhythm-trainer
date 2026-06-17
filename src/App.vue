@@ -345,6 +345,10 @@ function getTouchDistance(t1, t2) {
   return Math.hypot(dx, dy)
 }
 
+function getTouchMidpoint(t1, t2) {
+  return { x: (t1.clientX + t2.clientX) / 2, y: (t1.clientY + t2.clientY) / 2 }
+}
+
 function clampScoreScale(value) {
   return Math.min(MAX_SCORE_SCALE, Math.max(MIN_SCORE_SCALE, value))
 }
@@ -371,7 +375,18 @@ function handleScoreTouchMove(event) {
   if (!scoreGesture.active) return
   if (event.touches.length === 2 && scoreGesture.mode === 'pinch' && scoreGesture.startDistance) {
     const currentDistance = getTouchDistance(event.touches[0], event.touches[1])
-    scoreScale.value = clampScoreScale(scoreGesture.startScale * (currentDistance / scoreGesture.startDistance))
+    const newScale = clampScoreScale(scoreGesture.startScale * (currentDistance / scoreGesture.startDistance))
+    const paper = scorePaperEl.value
+    if (paper) {
+      const rect = paper.getBoundingClientRect()
+      const fp = getTouchMidpoint(event.touches[0], event.touches[1])
+      const px = fp.x - rect.left
+      const py = fp.y - rect.top
+      const ratio = newScale / scoreScale.value
+      scoreTranslateX.value = px - ratio * (px - scoreTranslateX.value)
+      scoreTranslateY.value = py - ratio * (py - scoreTranslateY.value)
+    }
+    scoreScale.value = newScale
     return
   }
   if (event.touches.length === 1 && scoreGesture.mode === 'pan') {
@@ -890,12 +905,8 @@ function stopPlayback() {
 function exportScoreImage() {
   const svgNode = scoreEl.value?.querySelector('svg')
   if (!svgNode) return
-  const clone = svgNode.cloneNode(true)
-  clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
-  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'style')
-  defs.textContent = '* { color: #000000 !important; fill: #000000 !important; stroke: #000000 !important; }'
-  clone.insertBefore(defs, clone.firstChild)
-  const source = new XMLSerializer().serializeToString(clone)
+  const source = new XMLSerializer().serializeToString(svgNode.cloneNode(true))
+    .replace(/currentColor/gi, '#000000')
   const image = new Image()
   const blob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' })
   const url = URL.createObjectURL(blob)
