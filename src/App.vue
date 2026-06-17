@@ -1142,16 +1142,18 @@ input[type="range"] { padding: 0; }
 .pattern-card small { color: #aeb6c6; font-size: 12px; text-align: center; }
 .toggle-group {
   min-height: 90px;
-  padding: 6px;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
+  justify-content: center;
 }
 
 .toggle-sub {
   flex: 1;
   min-height: 0;
-  padding: 4px 6px;
+  height: 41px;
+  padding: 2px 8px;
   color: #d8deea;
   background: #2a2e38;
   border: 2px solid transparent;
@@ -1161,6 +1163,10 @@ input[type="range"] { padding: 0; }
   font-weight: 600;
   text-align: center;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
 }
 
 .toggle-sub.active {
