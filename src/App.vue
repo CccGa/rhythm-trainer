@@ -247,8 +247,8 @@ const scoreGesture = reactive({
   startTranslateX: 0,
   startTranslateY: 0,
 })
-const MIN_SCORE_SCALE = 0.75
-const MAX_SCORE_SCALE = 2.2
+const MIN_SCORE_SCALE = 0.4
+const MAX_SCORE_SCALE = 3.0
 const scorePinch = reactive({ active: false, startDistance: 0, startScale: 1 })
 
 const scoreViewportStyle = computed(() => ({
@@ -378,7 +378,7 @@ function handleScoreTouchMove(event) {
     const touch = event.touches[0]
     const paper = scorePaperEl.value
     if (!paper) return
-    const margin = 80
+    const margin = 150
     const maxX = (scoreContentWidth.value * scoreScale.value - paper.clientWidth) / 2 + margin
     const maxY = (scoreContentHeight.value * scoreScale.value - paper.clientHeight) / 2 + margin
     scoreTranslateX.value = Math.max(-maxX, Math.min(maxX, scoreGesture.startTranslateX + (touch.clientX - scoreGesture.startX)))
