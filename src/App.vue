@@ -376,8 +376,13 @@ function handleScoreTouchMove(event) {
   }
   if (event.touches.length === 1 && scoreGesture.mode === 'pan') {
     const touch = event.touches[0]
-    scoreTranslateX.value = scoreGesture.startTranslateX + (touch.clientX - scoreGesture.startX)
-    scoreTranslateY.value = scoreGesture.startTranslateY + (touch.clientY - scoreGesture.startY)
+    const paper = scorePaperEl.value
+    if (!paper) return
+    const margin = 80
+    const maxX = (scoreContentWidth.value * scoreScale.value - paper.clientWidth) / 2 + margin
+    const maxY = (scoreContentHeight.value * scoreScale.value - paper.clientHeight) / 2 + margin
+    scoreTranslateX.value = Math.max(-maxX, Math.min(maxX, scoreGesture.startTranslateX + (touch.clientX - scoreGesture.startX)))
+    scoreTranslateY.value = Math.max(-maxY, Math.min(maxY, scoreGesture.startTranslateY + (touch.clientY - scoreGesture.startY)))
   }
 }
 
@@ -1150,6 +1155,7 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   touch-action: none;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
+  max-width: 100%;
   background: #ffffff;
   border-radius: 8px;
   box-sizing: border-box;
