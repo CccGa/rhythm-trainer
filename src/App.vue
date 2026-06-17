@@ -905,21 +905,28 @@ function stopPlayback() {
 function exportScoreImage() {
   const svgNode = scoreEl.value?.querySelector('svg')
   if (!svgNode) return
-  const clone = svgNode.cloneNode(true)
-  clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
-  let source = new XMLSerializer().serializeToString(clone)
-  source = source.replace(/currentColor/gi, '#000000')
-  source = source.replace(/fill="#([^"]*)"/gi, (m) => m.includes('none') ? m : 'fill="#000000"')
-  source = source.replace(/stroke="#([^"]*)"/gi, (m) => m.includes('none') ? m : 'stroke="#000000"')
-  source = source.replace(/color="#([^"]*)"/gi, 'color="#000000"')
-  downloadBlob(new Blob([source], { type: 'image/svg+xml;charset=utf-8' }), 'rhythm-score.svg')
-  const w = window.open()
-  if (w) {
-    w.document.write('<!DOCTYPE html><html><body style="margin:0;text-align:center;background:#fff">')
-    w.document.write(source)
-    w.document.write('</body></html>')
-    w.document.title = 'rhythm-score'
+  const svgData = new XMLSerializer().serializeToString(svgNode)
+  const canvas = document.createElement('canvas')
+  const rect = svgNode.getBoundingClientRect()
+  canvas.width = rect.width * 2
+  canvas.height = rect.height * 2
+  const ctx = canvas.getContext('2d')
+  const img = new Image()
+  const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' })
+  const url = URL.createObjectURL(svgBlob)
+  img.onload = () => {
+    ctx.scale(2, 2)
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(0, 0, rect.width, rect.height)
+    ctx.drawImage(img, 0, 0)
+    URL.revokeObjectURL(url)
+    canvas.toBlob((b) => { if (b) downloadBlob(b, 'rhythm-score.png') }, 'image/png')
   }
+  img.onerror = () => {
+    URL.revokeObjectURL(url)
+    canvas.toBlob((b) => { if (b) downloadBlob(b, 'rhythm-score.png') }, 'image/png')
+  }
+  img.src = url
 }function writeWav(audioBuffer) {
   const data = audioBuffer.getChannelData(0)
   const buffer = new ArrayBuffer(44 + data.length * 2)
