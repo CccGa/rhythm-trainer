@@ -372,6 +372,8 @@ function handleScoreTouchMove(event) {
   if (event.touches.length === 2 && scoreGesture.mode === 'pinch' && scoreGesture.startDistance) {
     const currentDistance = getTouchDistance(event.touches[0], event.touches[1])
     const newScale = clampScoreScale(scoreGesture.startScale * (currentDistance / scoreGesture.startDistance))
+    const paper = scorePaperEl.value
+    if (!paper) return
     const fp = getTouchMidpoint(event.touches[0], event.touches[1])
     const rect = paper.getBoundingClientRect()
     const px = fp.x - rect.left
