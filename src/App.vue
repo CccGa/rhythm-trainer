@@ -72,7 +72,6 @@
         <label><input v-model="allowRests" type="checkbox" /> 休止符</label>
         <label><input v-model="useMetronome" type="checkbox" /> 节拍器</label>
         <label><input v-model="showPitchPreview" type="checkbox" /> 音高预览</label>
-        <label><input v-model="showScore" type="checkbox" /> 显示五线谱</label>
       </div>
 
       <div class="actions">
@@ -95,7 +94,19 @@
             <div class="section-title score-title">
         <div class="score-title-left">
           <h2>五线谱</h2>
-          <span v-if="!showScore">已隐藏</span>
+          <button class="eye-btn" @click="showScore = !showScore" :title="showScore ? '隐藏五线谱' : '显示五线谱'">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <template v-if="showScore">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </template>
+              <template v-else>
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                <line x1="1" y1="1" x2="23" y2="23"/>
+              </template>
+            </svg>
+          </button>
         </div>
         <div class="score-actions">
           <button class="ghost-button" @click="exportScoreImage" :disabled="!hasQuestion">导出五线谱图片</button>
@@ -259,6 +270,7 @@ const scoreLayerStyle = computed(() => ({
   transform: `translate3d(${scoreTranslateX.value}px, ${scoreTranslateY.value}px, 0) scale(${scoreScale.value})`,
 }))
 const enabledPatterns = reactive({
+  base: true,
   quarterEighth: true,
   twoEight: true,
   fourSixteen: true,
@@ -905,27 +917,32 @@ function stopPlayback() {
 function exportScoreImage() {
   const svgNode = scoreEl.value?.querySelector('svg')
   if (!svgNode) return
-  const svgData = new XMLSerializer().serializeToString(svgNode)
+  const w = Number(svgNode.getAttribute('width')) || svgNode.getBoundingClientRect().width || 1040
+  const h = Number(svgNode.getAttribute('height')) || svgNode.getBoundingClientRect().height || 400
+  const clone = svgNode.cloneNode(true)
+  clone.setAttribute('width', String(w))
+  clone.setAttribute('height', String(h))
+  clone.removeAttribute('style')
+  let svg = new XMLSerializer().serializeToString(clone)
+  svg = svg.replace(/currentColor/gi, '#000')
+  const svgTag = '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h + '"><rect width="100%" height="100%" fill="#fff"/>'
+  const endSvg = '</svg>'
+  svg = svgTag + svg.replace(/^<svg[^>]*>/, '').replace(endSvg, '') + endSvg
   const canvas = document.createElement('canvas')
-  const rect = svgNode.getBoundingClientRect()
-  canvas.width = rect.width * 2
-  canvas.height = rect.height * 2
+  canvas.width = w * 2
+  canvas.height = h * 2
   const ctx = canvas.getContext('2d')
+  ctx.scale(2, 2)
+  ctx.fillStyle = '#fff'
+  ctx.fillRect(0, 0, w, h)
   const img = new Image()
-  const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' })
-  const url = URL.createObjectURL(svgBlob)
+  const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }))
   img.onload = () => {
-    ctx.scale(2, 2)
-    ctx.fillStyle = '#ffffff'
-    ctx.fillRect(0, 0, rect.width, rect.height)
-    ctx.drawImage(img, 0, 0)
+    ctx.drawImage(img, 0, 0, w, h)
     URL.revokeObjectURL(url)
-    canvas.toBlob((b) => { if (b) downloadBlob(b, 'rhythm-score.png') }, 'image/png')
+    canvas.toBlob(function(b) { if (b) downloadBlob(b, 'rhythm-score.png') }, 'image/png')
   }
-  img.onerror = () => {
-    URL.revokeObjectURL(url)
-    canvas.toBlob((b) => { if (b) downloadBlob(b, 'rhythm-score.png') }, 'image/png')
-  }
+  img.onerror = function() { URL.revokeObjectURL(url) }
   img.src = url
 }function writeWav(audioBuffer) {
   const data = audioBuffer.getChannelData(0)
@@ -1007,7 +1024,7 @@ function downloadBlob(blob, filename) {
 watch([timeSignature, bars, pitchCount, useAnacrusis, allowRests, eighthBeatMode, bpm], () => { generateQuestion() })
 watch(showScore, async () => { await nextTick(); renderStaff() })
 
-onMounted(async () => { initAudio(); await generateQuestion() })
+onMounted(async () => { initAudio(); await new Promise(r => setTimeout(r, 500)); await generateQuestion() })
 </script>
 
 <style scoped>
@@ -1214,6 +1231,20 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 }
 .score-host { min-width: 760px; }
 .score-host :deep(svg) { display: block; max-width: 100%; height: auto; }
+
+.score-title-left { display: flex; align-items: center; gap: 8px; }
+.eye-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #888;
+  padding: 4px;
+  min-height: auto;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 4px;
+}
+.eye-btn:hover { color: #fff; background: rgba(255,255,255,0.1); }
 
 .score-mask {
   min-height: 170px;
