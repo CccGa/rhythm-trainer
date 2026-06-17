@@ -371,17 +371,7 @@ function handleScoreTouchMove(event) {
   if (!scoreGesture.active) return
   if (event.touches.length === 2 && scoreGesture.mode === 'pinch' && scoreGesture.startDistance) {
     const currentDistance = getTouchDistance(event.touches[0], event.touches[1])
-    const newScale = clampScoreScale(scoreGesture.startScale * (currentDistance / scoreGesture.startDistance))
-    const paper = scorePaperEl.value
-    if (!paper) return
-    const fp = getTouchMidpoint(event.touches[0], event.touches[1])
-    const rect = paper.getBoundingClientRect()
-    const px = fp.x - rect.left
-    const py = fp.y - rect.top
-    const ratio = newScale / scoreScale.value
-    scoreTranslateX.value = px - ratio * (px - scoreTranslateX.value)
-    scoreTranslateY.value = py - ratio * (py - scoreTranslateY.value)
-    scoreScale.value = newScale
+    scoreScale.value = clampScoreScale(scoreGesture.startScale * (currentDistance / scoreGesture.startDistance))
     return
   }
   if (event.touches.length === 1 && scoreGesture.mode === 'pan') {
@@ -901,12 +891,10 @@ function exportScoreImage() {
   const svgNode = scoreEl.value?.querySelector('svg')
   if (!svgNode) return
   const clone = svgNode.cloneNode(true)
-  clone.querySelectorAll('*').forEach(el => {
-    if (el.getAttribute('fill') === 'currentColor') el.setAttribute('fill', '#000000')
-    if (el.getAttribute('stroke') === 'currentColor') el.setAttribute('stroke', '#000000')
-    if (el.style && el.style.color) el.style.color = '#000000'
-    if (el.getAttribute('color') === 'currentColor') el.setAttribute('color', '#000000')
-  })
+  clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
+  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'style')
+  defs.textContent = '* { color: #000000 !important; fill: #000000 !important; stroke: #000000 !important; }'
+  clone.insertBefore(defs, clone.firstChild)
   const source = new XMLSerializer().serializeToString(clone)
   const image = new Image()
   const blob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' })
