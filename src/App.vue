@@ -58,18 +58,18 @@
           :key="pattern.id"
           class="pattern-card"
           :class="{ active: enabledPatterns[pattern.id], locked: pattern.locked }"
+          :title="patternSubtitle(pattern)"
           @click="togglePattern(pattern)"
         >
             <span class="pattern-svg" v-html="patternSvg(pattern)"></span>
             <strong>{{ patternTitle(pattern) }}</strong>
-            <small>{{ patternSubtitle(pattern) }}</small>
           </button>
         </div>
       </div>
 
       <div class="switch-grid">
         <label><input v-model="useAnacrusis" type="checkbox" /> 加入弱起小节</label>
-        <label><input v-model="allowRests" type="checkbox" /> 休止符</label>
+        <label><input v-model="allowRests" type="checkbox" /> 加入休止符</label>
         <label><input v-model="useMetronome" type="checkbox" /> 节拍器</label>
         <label><input v-model="showPitchPreview" type="checkbox" /> 音高预览</label>
       </div>
@@ -95,22 +95,20 @@
         <div class="score-title-left">
           <h2>五线谱</h2>
           <button class="eye-btn" @click="showScore = !showScore" :title="showScore ? '隐藏五线谱' : '显示五线谱'">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <template v-if="showScore">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                <circle cx="12" cy="12" r="3"/>
-              </template>
-              <template v-else>
-                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
-                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
-                <line x1="1" y1="1" x2="23" y2="23"/>
-              </template>
+            <template v-if="showScore">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 1200 1200">
+              <path fill="currentColor" d="M779.843 599.925c0 95.331-80.664 172.612-180.169 172.612c-99.504 0-180.168-77.281-180.168-172.612c0-95.332 80.664-172.612 180.168-172.612c99.505-.001 180.169 77.281 180.169 172.612M600 240.521c-103.025.457-209.814 25.538-310.904 73.557C214.038 351.2 140.89 403.574 77.394 468.219C46.208 501.218 6.431 549 0 599.981c.76 44.161 48.13 98.669 77.394 131.763c59.543 62.106 130.786 113.018 211.702 154.179C383.367 931.674 487.712 958.015 600 959.48c103.123-.464 209.888-25.834 310.866-73.557c75.058-37.122 148.243-89.534 211.74-154.179c31.185-32.999 70.962-80.782 77.394-131.763c-.76-44.161-48.13-98.671-77.394-131.764c-59.543-62.106-130.824-112.979-211.74-154.141C816.644 268.36 712.042 242.2 600 240.521m-.076 89.248c156.119 0 282.675 120.994 282.675 270.251c0 149.256-126.556 270.25-282.675 270.25S317.249 749.275 317.249 600.02c0-149.257 126.556-270.251 282.675-270.251"/>
             </svg>
-          </button>
+          </template>
+          <template v-else>
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24">
+              <path fill="currentColor" d="M2 5.27L3.28 4L20 20.72L18.73 22l-3.08-3.08c-1.15.38-2.37.58-3.65.58c-5 0-9.27-3.11-11-7.5c.69-1.76 1.79-3.31 3.19-4.54zM12 9a3 3 0 0 1 3 3a3 3 0 0 1-.17 1L11 9.17A3 3 0 0 1 12 9m0-4.5c5 0 9.27 3.11 11 7.5a11.8 11.8 0 0 1-4 5.19l-1.42-1.43A9.86 9.86 0 0 0 20.82 12A9.82 9.82 0 0 0 12 6.5c-1.09 0-2.16.18-3.16.5L7.3 5.47c1.44-.62 3.03-.97 4.7-.97M3.18 12A9.82 9.82 0 0 0 12 17.5c.69 0 1.37-.07 2-.21L11.72 15A3.064 3.064 0 0 1 9 12.28L5.6 8.87c-.99.85-1.82 1.91-2.42 3.13"/>
+            </svg>
+          </template>          </button>
         </div>
         <div class="score-actions">
-          <button class="ghost-button" @click="exportScoreImage" :disabled="!hasQuestion">导出五线谱图片</button>
-          <button class="ghost-button" @click="exportAudioFile" :disabled="!hasQuestion">导出音频</button>
+          <button class="ghost-button" @click="exportScoreImage" :disabled="!hasQuestion">导出五线谱</button>
+          <button class="ghost-button" @click="exportAudioFile" style="margin-left:10px" :disabled="!hasQuestion">导出音频</button>
         </div>
       </div>
       <div class="score-paper" ref="scorePaperEl" @touchstart="handleScoreTouchStart" @touchmove.prevent="handleScoreTouchMove" @touchend="handleScoreTouchEnd" @touchcancel="handleScoreTouchEnd">
@@ -128,10 +126,10 @@
 import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
 import { Beam, Dot, Formatter, Renderer, Stave, StaveNote, StaveTie, Tuplet, Voice } from 'vexflow'
 import * as Tone from 'tone'
-const noteHead = (x, y, filled = true) => `<ellipse cx="${x + 1.5}" cy="${y}" rx="5" ry="3.5" transform="rotate(-18 ${x + 1.5} ${y})" fill="${filled ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="1.4"/>`
-const stem = (x1, y1, x2 = x1, y2 = 6) => `<line x1="${x1 + 1}" y1="${y1}" x2="${x2 + 1}" y2="${y2}" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>`
-const beam = (x1, y1, x2, y2 = y1, width = 3) => `<line x1="${x1 + 1}" y1="${y1 - 4}" x2="${x2 + 1}" y2="${y2 - 4}" stroke="currentColor" stroke-width="${width}" stroke-linecap="butt"/>`
-const flag = (x, y) => `<path d="M ${x + 1} ${y - 4} q 11 4 6 14" stroke="currentColor" stroke-width="1.4" fill="none"/>`
+const noteHead = (x, y, filled = true) => `<ellipse cx="${x + 1.5}" cy="${y}" rx="5" ry="3.5" transform="rotate(-18 ${x + 1.5} ${y})" fill="${filled ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="1"/>`
+const stem = (x1, y1, x2 = x1, y2 = 6) => `<line x1="${x1 + 1}" y1="${y1}" x2="${x2 + 1}" y2="${y2}" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>`
+const beam = (x1, y1, x2, y2 = y1, width = 2) => `<line x1="${x1 + 1}" y1="${y1 - 4}" x2="${x2 + 1}" y2="${y2 - 4}" stroke="currentColor" stroke-width="${width}" stroke-linecap="butt"/>`
+const flag = (x, y) => `<path d="M ${x + 1} ${y - 4} q 11 4 6 14" stroke="currentColor" stroke-width="1" fill="none"/>`
 const dot = (x, y) => `<circle cx="${x}" cy="${y}" r="2" fill="currentColor"/>`
 const svg = (body, viewBox = '0 0 92 44') => `<svg width="92" height="44" viewBox="${viewBox}" aria-hidden="true">${body}</svg>`
 
@@ -187,7 +185,7 @@ const rhythmPatterns = [
     id: 'triplet',
     label: '三连音',
     hint: '三连音',
-    svg: svg(`${noteHead(16, 31)}${stem(22, 31)}${noteHead(42, 31)}${stem(48, 31)}${noteHead(68, 31)}${stem(74, 31)}${beam(22, 10, 74)}<text x="40" y="7" fill="currentColor" font-size="11" font-weight="700">3</text>`, '0 0 86 44'),
+    svg: svg(`${noteHead(16, 31)}${stem(22, 31)}${noteHead(42, 31)}${stem(48, 31)}${noteHead(68, 31)}${stem(74, 31)}${beam(22, 10, 74)}<text x="40" y="7" fill="currentColor" font-size="11" font-weight="500">3</text>`, '0 0 86 44'),
   },
   {
     id: 'frontEightBackSixteen',
@@ -223,7 +221,7 @@ const rhythmPatterns = [
     id: 'tie',
     label: '连音线',
     hint: '同音连线',
-    svg: svg(`${noteHead(28, 31)}${stem(34, 31)}${noteHead(64, 31)}${stem(70, 31)}<path d="M 28 38 q 18 10 36 0" stroke="currentColor" stroke-width="2" fill="none"/>`),
+    svg: svg(`${noteHead(28, 31)}${stem(34, 31)}${noteHead(64, 31)}${stem(70, 31)}<path d="M 28 38 q 18 10 36 0" stroke="currentColor" stroke-width="1.2" fill="none"/>`),
   },
 ]
 const bpm = ref(60)
@@ -1123,8 +1121,8 @@ input[type="range"] { padding: 0; }
 }
 
 .pattern-card {
-  min-height: 112px;
-  padding: 14px 10px;
+  min-height: 90px;
+  padding: 10px 8px;
   color: #d8deea;
   background: #2a2e38;
   border: 2px solid transparent;
@@ -1140,7 +1138,7 @@ input[type="range"] { padding: 0; }
 .pattern-card.active { border-color: #63a4ff; background: #29384e; }
 .pattern-card.locked { cursor: default; }
 
-.pattern-svg { width: 92px; height: 44px; color: #ffffff; display: block; }
+.pattern-svg { width: 78px; height: 36px; color: #ffffff; display: block; }
 .pattern-svg :deep(svg) { width: 100%; height: 100%; display: block; }
 
 .pattern-card small { color: #aeb6c6; font-size: 12px; text-align: center; }
@@ -1214,9 +1212,9 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   .app-shell { padding: 10px; }
   .panel { padding: 12px; }
   .pattern-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
-  .pattern-card { min-height: 90px; padding: 8px 6px; }
-  .pattern-svg { width: 68px; height: 30px; }
-  .pattern-card strong { font-size: 12px; }
+  .pattern-card { min-height: 76px; padding: 6px 5px; }
+  .pattern-svg { width: 58px; height: 26px; }
+  .pattern-card strong { font-size: 11px; }
   .pattern-card small { font-size: 10px; }
   .actions, .actions-right { gap: 8px; }
   .actions-right { width: 100%; }
