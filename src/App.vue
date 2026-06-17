@@ -379,10 +379,16 @@ function handleScoreTouchMove(event) {
     const paper = scorePaperEl.value
     if (!paper) return
     const margin = 150
-    const maxX = (scoreContentWidth.value * scoreScale.value - paper.clientWidth) / 2 + margin
-    const maxY = (scoreContentHeight.value * scoreScale.value - paper.clientHeight) / 2 + margin
-    scoreTranslateX.value = Math.max(-maxX, Math.min(maxX, scoreGesture.startTranslateX + (touch.clientX - scoreGesture.startX)))
-    scoreTranslateY.value = Math.max(-maxY, Math.min(maxY, scoreGesture.startTranslateY + (touch.clientY - scoreGesture.startY)))
+    const totalW = scoreContentWidth.value * scoreScale.value
+    const totalH = scoreContentHeight.value * scoreScale.value
+    const gapW = Math.max(margin, (paper.clientWidth - totalW) / 2)
+    const gapH = Math.max(margin, (paper.clientHeight - totalH) / 2)
+    const minX = -(totalW + gapW - paper.clientWidth)
+    const maxX = gapW
+    const minY = -(totalH + gapH - paper.clientHeight)
+    const maxY = gapH
+    scoreTranslateX.value = Math.max(minX, Math.min(maxX, scoreGesture.startTranslateX + (touch.clientX - scoreGesture.startX)))
+    scoreTranslateY.value = Math.max(minY, Math.min(maxY, scoreGesture.startTranslateY + (touch.clientY - scoreGesture.startY)))
   }
 }
 
