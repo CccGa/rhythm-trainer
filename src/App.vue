@@ -34,16 +34,16 @@
         </label>
 
         <label class="field">
-          <span>小节数：{{ bars }}</span>
-          <input v-model.number="bars" type="range" min="4" max="16" step="1" />
-        </label>
-
-        <label class="field">
           <span>8 分拍播放方式</span>
           <select v-model="eighthBeatMode" :disabled="!isEighthMeter">
             <option value="dottedQuarter">附点四分音符</option>
             <option value="eighth">八分音符</option>
           </select>
+        </label>
+
+        <label class="field">
+          <span>小节数：{{ bars }}</span>
+          <input v-model.number="bars" type="range" min="4" max="16" step="1" />
         </label>
       </div>
 
@@ -1086,7 +1086,7 @@ h2 { font-size: 20px; font-weight: 650; }
 
 .control-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
   gap: 16px;
   margin-top: 18px;
 }
