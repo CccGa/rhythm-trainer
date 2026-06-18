@@ -404,23 +404,23 @@ function handleScoreTouchMove(event) {
       scoreTranslateY.value = py - ratio * (py - scoreTranslateY.value)
     }
     scoreScale.value = newScale
-    clampStaff()
     return
   }
   if (event.touches.length === 1 && scoreGesture.mode === 'pan') {
     const touch = event.touches[0]
     const paper = scorePaperEl.value
     if (!paper) return
-    const sc = scoreScale.value
-    const tw = scoreContentWidth.value * sc
-    const th = scoreContentHeight.value * sc
-    const minX = (50 - tw) / sc
-    const maxX = (paper.clientWidth - 50) / sc
-    const minY = (100 - th) / sc
-    const maxY = (paper.clientHeight - 100) / sc
+    const margin = 150
+    const totalW = scoreContentWidth.value * scoreScale.value
+    const totalH = scoreContentHeight.value * scoreScale.value
+    const gapW = Math.max(margin, (paper.clientWidth - totalW) / 2)
+    const gapH = Math.max(margin, (paper.clientHeight - totalH) / 2)
+    const minX = -(totalW + gapW - paper.clientWidth)
+    const maxX = gapW
+    const minY = -(totalH + gapH - paper.clientHeight)
+    const maxY = gapH
     scoreTranslateX.value = Math.max(minX, Math.min(maxX, scoreGesture.startTranslateX + (touch.clientX - scoreGesture.startX)))
     scoreTranslateY.value = Math.max(minY, Math.min(maxY, scoreGesture.startTranslateY + (touch.clientY - scoreGesture.startY)))
-    clampStaff()
   }
 }
 
@@ -449,9 +449,7 @@ function handleScoreWheel(e) {
   scoreTranslateX.value = px - ratio * (px - scoreTranslateX.value)
   scoreTranslateY.value = py - ratio * (py - scoreTranslateY.value)
   scoreScale.value = newScale
-  clampStaff()
 }
-function clampStaff(){var p=scorePaperEl.value;if(!p)return;var sc=scoreScale.value;var pw=p.clientWidth;var ph=p.clientHeight;var tw=scoreContentWidth.value*sc;var th=scoreContentHeight.value*sc;var x=scoreTranslateX.value;var y=scoreTranslateY.value;var ix=(50-tw)/sc;var mx=(pw-50)/sc;var iy=(100-th)/sc;var my=(ph-100)/sc;if(x<ix)x=ix;if(x>mx)x=mx;if(y<iy)y=iy;if(y>my)y=my;scoreTranslateX.value=x;scoreTranslateY.value=y}
 let scoreMouseDown = false
 let scoreMouseStartX = 0
 let scoreMouseStartY = 0
@@ -471,16 +469,17 @@ function handleScoreMouseMove(e) {
   if (!scoreMouseDown) return
   const paper = scorePaperEl.value
   if (!paper) return
-  const sc = scoreScale.value
-  const tw = scoreContentWidth.value * sc
-  const th = scoreContentHeight.value * sc
-  const minX = (50 - tw) / sc
-  const maxX = (paper.clientWidth - 50) / sc
-  const minY = (100 - th) / sc
-  const maxY = (paper.clientHeight - 100) / sc
+  const margin = 150
+  const totalW = scoreContentWidth.value * scoreScale.value
+  const totalH = scoreContentHeight.value * scoreScale.value
+  const gapW = Math.max(margin, (paper.clientWidth - totalW) / 2)
+  const gapH = Math.max(margin, (paper.clientHeight - totalH) / 2)
+  const minX = -(totalW + gapW - paper.clientWidth)
+  const maxX = gapW
+  const minY = -(totalH + gapH - paper.clientHeight)
+  const maxY = gapH
   scoreTranslateX.value = Math.max(minX, Math.min(maxX, scoreMouseStartTX + (e.clientX - scoreMouseStartX)))
   scoreTranslateY.value = Math.max(minY, Math.min(maxY, scoreMouseStartTY + (e.clientY - scoreMouseStartY)))
-  clampStaff()
 }
 
 function handleScoreMouseUp() {
