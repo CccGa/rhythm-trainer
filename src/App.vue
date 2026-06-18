@@ -414,10 +414,10 @@ function handleScoreTouchMove(event) {
     const sc = scoreScale.value
     const tw = scoreContentWidth.value * sc
     const th = scoreContentHeight.value * sc
-    const minX = (50 - tw) / sc
-    const maxX = (paper.clientWidth - 50) / sc
-    const minY = (100 - th) / sc
-    const maxY = (paper.clientHeight - 100) / sc
+    const minX = 80 - tw
+    const maxX = paper.clientWidth - 120
+    const minY = 120 - th
+    const maxY = paper.clientHeight - 170
     scoreTranslateX.value = Math.max(minX, Math.min(maxX, scoreGesture.startTranslateX + (touch.clientX - scoreGesture.startX)))
     scoreTranslateY.value = Math.max(minY, Math.min(maxY, scoreGesture.startTranslateY + (touch.clientY - scoreGesture.startY)))
     clampStaff()
@@ -451,7 +451,7 @@ function handleScoreWheel(e) {
   scoreScale.value = newScale
   clampStaff()
 }
-function clampStaff(){var p=scorePaperEl.value;if(!p)return;var sc=scoreScale.value;var pw=p.clientWidth;var ph=p.clientHeight;var tw=scoreContentWidth.value*sc;var th=scoreContentHeight.value*sc;var x=scoreTranslateX.value;var y=scoreTranslateY.value;var ix=(50-tw)/sc;var mx=(pw-50)/sc;var iy=(100-th)/sc;var my=(ph-100)/sc;if(x<ix)x=ix;if(x>mx)x=mx;if(y<iy)y=iy;if(y>my)y=my;scoreTranslateX.value=x;scoreTranslateY.value=y}
+function clampStaff(){var p=scorePaperEl.value;if(!p)return;var s=scoreEl.value;if(!s)return;var svg=s.querySelector("svg");if(!svg)return;var sw=Number(svg.getAttribute("width"))||svg.getBoundingClientRect().width||scoreContentWidth.value;var sh=Number(svg.getAttribute("height"))||svg.getBoundingClientRect().height||scoreContentHeight.value;var sc=scoreScale.value;var tw=sw*sc;var th=sh*sc;var pw=p.clientWidth;var ph=p.clientHeight;var x=scoreTranslateX.value;var y=scoreTranslateY.value;var gap=80;var vgap=120;var minX=gap-tw;var maxX=pw-gap-100;var minY=vgap-th;var maxY=ph-vgap-50;if(minX>maxX){var cx=pw/2;x=cx-tw/2}else{if(x<minX)x=minX;if(x>maxX)x=maxX}if(minY>maxY){var cy=ph/2;y=cy-th/2}else{if(y<minY)y=minY;if(y>maxY)y=maxY}scoreTranslateX.value=x;scoreTranslateY.value=y}
 let scoreMouseDown = false
 let scoreMouseStartX = 0
 let scoreMouseStartY = 0
@@ -474,10 +474,10 @@ function handleScoreMouseMove(e) {
   const sc = scoreScale.value
   const tw = scoreContentWidth.value * sc
   const th = scoreContentHeight.value * sc
-  const minX = (50 - tw) / sc
-  const maxX = (paper.clientWidth - 50) / sc
-  const minY = (100 - th) / sc
-  const maxY = (paper.clientHeight - 100) / sc
+  const minX = 80 - tw
+  const maxX = paper.clientWidth - 120
+  const minY = 120 - th
+  const maxY = paper.clientHeight - 170
   scoreTranslateX.value = Math.max(minX, Math.min(maxX, scoreMouseStartTX + (e.clientX - scoreMouseStartX)))
   scoreTranslateY.value = Math.max(minY, Math.min(maxY, scoreMouseStartTY + (e.clientY - scoreMouseStartY)))
   clampStaff()
@@ -819,8 +819,8 @@ function renderStaff() {
   if (!scoreAutoCentered.value) {
     const paper = scorePaperEl.value
     if (paper) {
-      scoreTranslateX.value = Math.max(0, (paper.clientWidth - scoreContentWidth.value) / 2)
-      scoreTranslateY.value = Math.max(0, (paper.clientHeight - scoreContentHeight.value) / 2)
+      var _ms=scoreEl.value?scoreEl.value.querySelector("svg"):null;var _sw=_ms?(Number(_ms.getAttribute("width"))||_ms.getBoundingClientRect().width||scoreContentWidth.value):scoreContentWidth.value;scoreTranslateX.value=Math.max(0,(paper.clientWidth-_sw*scoreScale.value)/2)
+      var _ms2=scoreEl.value?scoreEl.value.querySelector("svg"):null;var _sh=_ms2?(Number(_ms2.getAttribute("height"))||_ms2.getBoundingClientRect().height||scoreContentHeight.value):scoreContentHeight.value;scoreTranslateY.value=Math.max(0,(paper.clientHeight-_sh*scoreScale.value)/2)
     }
     scoreAutoCentered.value = false
   }}
@@ -1297,7 +1297,7 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   min-height: 230px;
   margin-top: 16px;
   padding: 18px;
-  overflow: auto;
+  overflow: hidden;
   touch-action: none;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
@@ -1341,7 +1341,7 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   transform-origin: top left;
 }
 .score-host { min-width: 760px; }
-.score-host :deep(svg) { display: block; max-width: 100%; height: auto; }
+.score-host :deep(svg) { display: block; }
 
 .score-title-left { display: flex; align-items: center; gap: 8px; }
 .eye-btn {
