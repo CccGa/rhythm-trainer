@@ -1,0 +1,11 @@
+﻿const fs = require('fs');
+const path = 'E:/节奏听辨生成器/rhythm-trainer/src/App.vue';
+let c = fs.readFileSync(path, 'utf8');
+const oldFn = 'function clampStaff(){var p=scorePaperEl.value;if(!p)return;var sc=scoreScale.value;var pw=p.clientWidth;var ph=p.clientHeight;var tw=scoreContentWidth.value*sc;var th=scoreContentHeight.value*sc;var x=scoreTranslateX.value;var y=scoreTranslateY.value;var ix=(80-tw)/sc;var mx=(pw-80)/sc;var iy=(120-th)/sc;var my=(ph-120)/sc;if(x<ix)x=ix;if(x>mx)x=mx;if(y<iy)y=iy;if(y>my)y=my;scoreTranslateX.value=x;scoreTranslateY.value=y}';
+const newFn = 'function clampStaff(){var p=scorePaperEl.value;if(!p)return;var s=scoreEl.value;if(!s)return;var svg=s.querySelector("svg");if(!svg)return;var sw=Number(svg.getAttribute("width"))||svg.getBoundingClientRect().width||scoreContentWidth.value;var sh=Number(svg.getAttribute("height"))||svg.getBoundingClientRect().height||scoreContentHeight.value;var sc=scoreScale.value;var tw=sw*sc;var th=sh*sc;var pw=p.clientWidth;var ph=p.clientHeight;var x=scoreTranslateX.value;var y=scoreTranslateY.value;var ix=(80-tw)/sc;var mx=(pw-80)/sc;var iy=(120-th)/sc;var my=(ph-120)/sc;if(x<ix)x=ix;if(x>mx)x=mx;if(y<iy)y=iy;if(y>my)y=my;scoreTranslateX.value=x;scoreTranslateY.value=y}';
+console.log('Match:', c.includes(oldFn));
+c = c.replace(oldFn, newFn);
+fs.writeFileSync(path, c, 'utf8');
+console.log('Written.');
+const v = fs.readFileSync(path, 'utf8');
+console.log('has svg:', v.includes('var sw='));

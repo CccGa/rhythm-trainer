@@ -73,6 +73,8 @@
 
       <div class="switch-grid">
         <label><input v-model="useMetronome" type="checkbox" /> 节拍器</label>
+        <label><input v-model="useCountIn" type="checkbox" /> 预备拍</label>
+        <label><input v-model="useReference" type="checkbox" /> 参考音</label>
         <label><input v-model="showPitchPreview" type="checkbox" /> 音高预览</label>
       </div>
 
@@ -82,7 +84,7 @@
         <button class="play-button" @click="togglePlayback" :disabled="!hasQuestion">
           {{ isPlaying ? '暂停' : '播放' }}
         </button>
-        <button class="danger-button" @click="stopPlayback" :disabled="!isPlaying">停止</button>
+        <button class="danger-button" @click="resetPlayback" :disabled="!isPlaying">停止</button>
         </span>
       </div>
 
@@ -233,11 +235,14 @@ const pitchCount = ref(1)
 const eighthBeatMode = ref('dottedQuarter')
 const useAnacrusis = ref(false)
 const allowRests = ref(false)
+const useCountIn = ref(true)
+const useReference = ref(true)
 const useMetronome = ref(true)
 const showPitchPreview = ref(false)
 const showScore = ref(true)
 const scoreAutoCentered = ref(false)
 const isPlaying = ref(false)
+const playElapsed = ref(0)
 const questionBars = ref([])
 const pickupBar = ref(null)
 const selectedPitches = ref([])
@@ -290,6 +295,7 @@ let clickSynth = null
 let pianoGain = null
 let clickGain = null
 let stopTimers = []
+let playStartTime = 0
 
 const hasQuestion = computed(() => questionBars.value.length > 0)
 const isEighthMeter = computed(() => timeSignature.value.endsWith('/8'))
@@ -414,10 +420,10 @@ function handleScoreTouchMove(event) {
     const sc = scoreScale.value
     const tw = scoreContentWidth.value * sc
     const th = scoreContentHeight.value * sc
-    const minX = (50 - tw) / sc
-    const maxX = (paper.clientWidth - 50) / sc
-    const minY = (100 - th) / sc
-    const maxY = (paper.clientHeight - 100) / sc
+    const minX = 80 - tw
+    const maxX = paper.clientWidth - 120
+    const minY = 120 - th
+    const maxY = paper.clientHeight - 170
     scoreTranslateX.value = Math.max(minX, Math.min(maxX, scoreGesture.startTranslateX + (touch.clientX - scoreGesture.startX)))
     scoreTranslateY.value = Math.max(minY, Math.min(maxY, scoreGesture.startTranslateY + (touch.clientY - scoreGesture.startY)))
     clampStaff()
@@ -451,7 +457,7 @@ function handleScoreWheel(e) {
   scoreScale.value = newScale
   clampStaff()
 }
-function clampStaff(){var p=scorePaperEl.value;if(!p)return;var sc=scoreScale.value;var pw=p.clientWidth;var ph=p.clientHeight;var tw=scoreContentWidth.value*sc;var th=scoreContentHeight.value*sc;var x=scoreTranslateX.value;var y=scoreTranslateY.value;var ix=(50-tw)/sc;var mx=(pw-50)/sc;var iy=(100-th)/sc;var my=(ph-100)/sc;if(x<ix)x=ix;if(x>mx)x=mx;if(y<iy)y=iy;if(y>my)y=my;scoreTranslateX.value=x;scoreTranslateY.value=y}
+function clampStaff(){var p=scorePaperEl.value;if(!p)return;var s=scoreEl.value;if(!s)return;var svg=s.querySelector("svg");if(!svg)return;var sw=Number(svg.getAttribute("width"))||svg.getBoundingClientRect().width||scoreContentWidth.value;var sh=Number(svg.getAttribute("height"))||svg.getBoundingClientRect().height||scoreContentHeight.value;var sc=scoreScale.value;var tw=sw*sc;var th=sh*sc;var pw=p.clientWidth;var ph=p.clientHeight;var x=scoreTranslateX.value;var y=scoreTranslateY.value;var gap=80;var vgap=120;var minX=gap-tw;var maxX=pw-gap-100;var minY=vgap-th;var maxY=ph-vgap-50;if(minX>maxX){var cx=pw/2;x=cx-tw/2}else{if(x<minX)x=minX;if(x>maxX)x=maxX}if(minY>maxY){var cy=ph/2;y=cy-th/2}else{if(y<minY)y=minY;if(y>maxY)y=maxY}scoreTranslateX.value=x;scoreTranslateY.value=y}
 let scoreMouseDown = false
 let scoreMouseStartX = 0
 let scoreMouseStartY = 0
@@ -474,10 +480,10 @@ function handleScoreMouseMove(e) {
   const sc = scoreScale.value
   const tw = scoreContentWidth.value * sc
   const th = scoreContentHeight.value * sc
-  const minX = (50 - tw) / sc
-  const maxX = (paper.clientWidth - 50) / sc
-  const minY = (100 - th) / sc
-  const maxY = (paper.clientHeight - 100) / sc
+  const minX = 80 - tw
+  const maxX = paper.clientWidth - 120
+  const minY = 120 - th
+  const maxY = paper.clientHeight - 170
   scoreTranslateX.value = Math.max(minX, Math.min(maxX, scoreMouseStartTX + (e.clientX - scoreMouseStartX)))
   scoreTranslateY.value = Math.max(minY, Math.min(maxY, scoreMouseStartTY + (e.clientY - scoreMouseStartY)))
   clampStaff()
@@ -819,8 +825,8 @@ function renderStaff() {
   if (!scoreAutoCentered.value) {
     const paper = scorePaperEl.value
     if (paper) {
-      scoreTranslateX.value = Math.max(0, (paper.clientWidth - scoreContentWidth.value) / 2)
-      scoreTranslateY.value = Math.max(0, (paper.clientHeight - scoreContentHeight.value) / 2)
+      var _ms=scoreEl.value?scoreEl.value.querySelector("svg"):null;var _sw=_ms?(Number(_ms.getAttribute("width"))||_ms.getBoundingClientRect().width||scoreContentWidth.value):scoreContentWidth.value;scoreTranslateX.value=Math.max(0,(paper.clientWidth-_sw*scoreScale.value)/2)
+      var _ms2=scoreEl.value?scoreEl.value.querySelector("svg"):null;var _sh=_ms2?(Number(_ms2.getAttribute("height"))||_ms2.getBoundingClientRect().height||scoreContentHeight.value):scoreContentHeight.value;scoreTranslateY.value=Math.max(0,(paper.clientHeight-_sh*scoreScale.value)/2)
     }
     scoreAutoCentered.value = false
   }}
@@ -911,7 +917,9 @@ function fullBarSeconds() {
 function clickStepSeconds() { return 60 / bpm.value }
 
 function scheduleTimer(callback, delay) {
-  const id = window.setTimeout(callback, delay * 1000)
+  var d = delay
+  if (playElapsed.value > 0) { d -= playElapsed.value; if (d <= 0) { if (d < 0) return; d = 0 } }
+  const id = window.setTimeout(callback, d * 1000)
   stopTimers.push(id)
 }
 
@@ -924,8 +932,12 @@ function playTone(noteName, seconds = 0.7, options = {}) {
 function playClick() { clickSynth?.triggerAttackRelease('C6', '32n') }
 
 async function togglePlayback() {
-  if (isPlaying.value) { stopPlayback(); return }
-  await startPlayback()
+  if (isPlaying.value) {
+    playElapsed.value = (Date.now() - playStartTime) / 1000
+    stopPlayback()
+    return
+  }
+  await startPlayback(0)
 }
 
 async function startPlayback() {
@@ -933,26 +945,31 @@ async function startPlayback() {
   stopPlayback()
   await Tone.start()
   await Tone.loaded()
+  playStartTime = Date.now()
   isPlaying.value = true
   statusMessage.value = '正在播放。'
 
   let cursor = 0
-  scheduleTimer(() => playTone('A4', 3), cursor)
-  cursor += 3
-
-  if (selectedPitches.value.length > 1) {
+  if (useReference.value) {
+    scheduleTimer(() => playTone('A4', 3), cursor)
+    cursor += 3
+    if (selectedPitches.value.length > 1) {
     sortedPitches.value.forEach((pitch) => {
       scheduleTimer(() => playTone(pitch.tone, 1.5), cursor)
       cursor += 1.5
     })
     cursor += 1
   }
-
-  const countInSeconds = fullBarSeconds() * 2
-  for (let t = 0; t < countInSeconds; t += clickStepSeconds()) {
-    scheduleTimer(playClick, cursor + t)
   }
-  cursor += countInSeconds
+
+  let countInSeconds = 0
+  if (useCountIn.value) {
+    countInSeconds = fullBarSeconds() * 2
+    for (let t = 0; t < countInSeconds; t += clickStepSeconds()) {
+      scheduleTimer(playClick, cursor + t)
+    }
+    cursor += countInSeconds
+  }
 
   let questionCursor = cursor
   const totalQuestionSeconds = flatNotes.value.reduce((sum, note) => sum + noteSeconds(note.tupletGroup ? note.units * 2 / 3 : note.units), 0)
@@ -974,13 +991,18 @@ async function startPlayback() {
     i = j + 1
   }
 
-  scheduleTimer(() => { isPlaying.value = false; statusMessage.value = '播放完成。' }, questionCursor + 0.2)
+  scheduleTimer(() => { isPlaying.value = false; playElapsed.value = 0; statusMessage.value = '播放完成。' }, questionCursor + 0.2)
 }
 
 function stopPlayback() {
   stopTimers.forEach((id) => window.clearTimeout(id))
   stopTimers = []
   isPlaying.value = false
+}
+
+function resetPlayback() {
+  stopPlayback()
+  playElapsed.value = 0
 }
 
 function exportScoreImage() {
@@ -1049,13 +1071,17 @@ async function exportAudioFile() {
     }).toDestination()
     await Tone.loaded()
     let cursor = 0
-    exportSynth.triggerAttackRelease('A4', 3, cursor); cursor += 3
-    if (selectedPitches.value.length > 1) {
+    if (useReference.value) {
+      exportSynth.triggerAttackRelease('A4', 3, cursor); cursor += 3
+      if (selectedPitches.value.length > 1) {
       sortedPitches.value.forEach((pitch) => { exportSynth.triggerAttackRelease(pitch.tone, 1.35, cursor); cursor += 1.5 })
       cursor += 1
     }
-    for (let t = 0; t < fullBarSeconds() * 2; t += clickStepSeconds()) click.triggerAttackRelease('C6', '32n', cursor + t)
-    cursor += fullBarSeconds() * 2
+    }
+    if (useCountIn.value) {
+      for (let t = 0; t < fullBarSeconds() * 2; t += clickStepSeconds()) click.triggerAttackRelease('C6', '32n', cursor + t)
+      cursor += fullBarSeconds() * 2
+    }
     const questionLength = flatNotes.value.reduce((sum, note) => sum + noteSeconds(note.tupletGroup ? note.units * 2 / 3 : note.units), 0)
     if (useMetronome.value) {
       for (let t = 0; t < questionLength; t += clickStepSeconds()) click.triggerAttackRelease('C6', '32n', cursor + t)
@@ -1170,6 +1196,7 @@ input, select {
   border-radius: 6px;
   box-sizing: border-box;
 }
+input[type="number"], select { height: 42px; min-height: 42px; box-sizing: border-box; }
 
 input[type="range"] { padding: 0; }
 
@@ -1244,15 +1271,20 @@ input[type="range"] { padding: 0; }
 }
 
 @media (max-width: 720px) {
+  .switch-grid { grid-template-columns: repeat(2, 1fr); gap: 20px; }
   .toggle-group { min-height: 76px; padding: 3px; }
   .toggle-sub { font-size: 10px; }
 }
 
 .switch-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
   margin-top: 18px;
+}
+
+@media (min-width: 1200px) {
+  .switch-grid { grid-template-columns: repeat(4, 1fr); gap: 32px; }
 }
 
 .switch-grid label { min-height: 40px; display: flex; align-items: center; gap: 9px; }
@@ -1297,7 +1329,7 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   min-height: 230px;
   margin-top: 16px;
   padding: 18px;
-  overflow: auto;
+  overflow: hidden;
   touch-action: none;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
@@ -1341,7 +1373,7 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   transform-origin: top left;
 }
 .score-host { min-width: 760px; }
-.score-host :deep(svg) { display: block; max-width: 100%; height: auto; }
+.score-host :deep(svg) { display: block; }
 
 .score-title-left { display: flex; align-items: center; gap: 8px; }
 .eye-btn {
